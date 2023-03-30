@@ -1,0 +1,175 @@
+def count_vehicles(idxs, boxes, classIDs, vehicle_count, previous_frame_detections, frame, list_of_vehicles):
+    current_detections = {}
+    class_counts = {}
+    
+    if len(idxs) > 0:
+        for i in idxs.flatten():
+            (x, y) = (boxes[i][0], boxes[i][1])
+            (w, h) = (boxes[i][2], boxes[i][3])
+            
+            centerX = x + (w//2)
+            centerY = y+ (h//2)
+
+            class_id = classIDs[i]
+            
+            if LABELS[class_id] in list_of_vehicles:
+                vehicle_type = LABELS[class_id]
+                
+                if vehicle_type not in class_counts:
+                    class_counts[vehicle_type] = 0
+
+                current_detections[(centerX, centerY)] = (vehicle_count, vehicle_type)
+                
+                if not boxInPreviousFrames(previous_frame_detections, (centerX, centerY, w, h), current_detections):
+                    vehicle_count += 1
+                    class_counts[vehicle_type] += 1
+
+                vehicle_id, vehicle_type = current_detections.get((centerX, centerY))
+                
+                if list(current_detections.values()).count((vehicle_id, vehicle_type)) > 1:
+                    current_detections[(centerX, centerY)] = (vehicle_count, vehicle_type)
+                    vehicle_count += 1
+                    class_counts[vehicle_type] += 1
+                    
+                cv2.putText(frame, str(vehicle_id), (centerX, centerY),\
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, [0,0,255], 2)
+
+    return vehicle_count, current_detections, class_counts
+
+
+
+
+
+
+To modify the code to handle video frames, you would need to modify the code to loop over each frame in the video and call the count_vehicles() function for each frame. Here is an example of how you could modify the code to handle video frames:
+
+python
+Copy code
+import cv2
+
+# define video file path
+video_path = "path/to/video/file.mp4"
+
+# define list of vehicle types to count
+list_of_vehicles = ["car", "truck", "bus"]
+
+# initialize previous frame detections dictionary
+previous_frame_detections = {}
+
+# initialize vehicle count and class count dictionaries
+vehicle_count = 0
+class_counts = {}
+
+# create video capture object
+cap = cv2.VideoCapture(video_path)
+
+# loop over frames in video
+while True:
+    # read frame from video capture object
+    ret, frame = cap.read()
+    
+    # check if end of video file has been reached
+    if not ret:
+        break
+    
+    # convert frame to grayscale (if necessary)
+    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # perform object detection on frame (using your own detection code)
+    idxs, boxes, classIDs = perform_object_detection(frame)
+    
+    # call count_vehicles function for current frame
+    vehicle_count, current_detections, current_class_counts = count_vehicles(idxs, boxes, classIDs, vehicle_count, previous_frame_detections, frame, list_of_vehicles)
+    
+    # update previous frame detections dictionary
+    previous_frame_detections = current_detections
+    
+    # update class count dictionary with current frame counts
+    for vehicle_type, count in current_class_counts.items():
+        if vehicle_type not in class_counts:
+            class_counts[vehicle_type] = 0
+        class_counts[vehicle_type] += count
+    
+    # display frame with vehicle IDs
+    cv2.imshow("Frame", frame)
+    
+    # wait for key press to move on to next frame
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# release video capture object and close all windows
+cap.release()
+cv2.destroyAllWindows()
+
+# print final vehicle count and class counts
+print("Total vehicle count: {}".format(vehicle_count))
+print("Vehicle class counts:")
+for vehicle_type, count in class_counts.items():
+    print("{}: {}".format(vehicle_type, count))
+
+# print final vehicle count and class counts
+print("Total vehicle count: {}".format(vehicle_count))
+print("Vehicle class counts:")
+for vehicle_type, count in class_counts.items():
+    print("{}: {}".format(vehicle_type, count))
+In this modified code, we start by defining the path to the video file and the list of vehicle types to count. We also initialize the previous_frame_detections dictionary, the vehicle_count variable, and the class_counts dictionary.
+
+We then create a VideoCapture object using the video file path and loop over each frame in the video using a while loop. Within the loop, we read the current frame from the VideoCapture object and perform object detection on the frame (using your own detection code). We then call the count_vehicles() function for the current frame and update the previous_frame_detections dictionary with the current frame's detections. We also update the class_counts dictionary with the current frame's vehicle counts.
+
+Finally, we display the current frame with the vehicle IDs and wait for a key press before moving on to the next frame. When we reach the end of the video file, we release the VideoCapture object and close all windows. We also print out the final vehicle count and class counts.
+
+Note that you will need to replace the perform_object_detection() function call with your own code for performing object detection on the video frames. You may also need to modify the function arguments and return values depending on the specific requirements of your code.
+
+
+import time
+
+# define the time intervals for each state of the traffic light
+GREEN_TIME = 20  # time for green light in seconds
+YELLOW_TIME = 5  # time for yellow light in seconds
+RED_TIME = 20  # time for red light in seconds
+
+# define the threshold for the number of cars that triggers the light to change
+CAR_THRESHOLD = 10
+
+# initialize the state of the traffic light
+state = 'green'
+state_time = time.time()
+
+# initialize the vehicle count
+vehicle_count = 0
+
+while True:
+    # get the current vehicle count (you can use your function here)
+    # let's simulate the count using a random number between 0 and 20
+    vehicle_count = random.randint(0, 20)
+
+    # check if the count exceeds the threshold for changing the light
+    if vehicle_count >= CAR_THRESHOLD:
+        # change the state of the traffic light
+        if state == 'green':
+            state = 'yellow'
+            state_time = time.time()
+        elif state == 'yellow':
+            state = 'red'
+            state_time = time.time()
+        elif state == 'red':
+            state = 'green'
+            state_time = time.time()
+
+    # check if the state of the traffic light needs to change based on the time interval
+    elapsed_time = time.time() - state_time
+    if state == 'green' and elapsed_time >= GREEN_TIME:
+        state = 'yellow'
+        state_time = time.time()
+    elif state == 'yellow' and elapsed_time >= YELLOW_TIME:
+        state = 'red'
+        state_time = time.time()
+    elif state == 'red' and elapsed_time >= RED_TIME:
+        state = 'green'
+        state_time = time.time()
+
+    # print the current state of the traffic light and the vehicle count
+    print(f'Traffic light is {state}, vehicle count is {vehicle_count}')
+
+    # wait for a short time before checking again
+    time.sleep(1)
